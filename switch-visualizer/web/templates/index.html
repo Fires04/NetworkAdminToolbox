@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SwitchVisualizer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Segoe UI, Arial, sans-serif;
+      background: #181818;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 48px;
+      gap: 20px;
+    }
+
+    /* ── header ── */
+    header {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #fff;
+    }
+    header span { color: #66bb6a; }
+
+    /* ── card ── */
+    .card {
+      background: #242424;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 22px 28px;
+      width: 100%;
+      max-width: 980px;
+    }
+    .card-title {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: #777;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── form controls ── */
+    label { font-size: .78rem; color: #888; font-weight: 500; }
+    input[type="text"], input[type="number"], select {
+      background: #181818;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: .85rem;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    input:focus, select:focus { border-color: #66bb6a; }
+    .form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.w1 { flex: 1 1 120px; }
+    .form-group.w2 { flex: 2 1 200px; }
+    .form-group.w3 { flex: 3 1 280px; }
+    .hint { font-size: .72rem; color: #555; margin-top: 3px; }
+
+    /* ── buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 6px; border: none;
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, background .15s;
+      white-space: nowrap;
+    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn:hover:not(:disabled) { opacity: .85; }
+    .btn-primary   { background: #66bb6a; color: #111; }
+    .btn-secondary { background: #363636; color: #ccc; border: 1px solid #444; }
+    .btn-danger    { background: transparent; color: #ef5350; border: 1px solid #ef5350; }
+    .btn-sm        { padding: 4px 10px; font-size: .78rem; }
+    .btn-icon      { background: transparent; border: 1px solid #404040; color: #ccc; padding: 4px 8px; border-radius: 5px; font-size: .8rem; cursor: pointer; }
+    .btn-icon:hover { background: #333; }
+
+    /* ── drop zone ── */
+    .drop-zone {
+      border: 2px dashed #404040;
+      border-radius: 8px;
+      padding: 18px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+      font-size: .85rem; color: #666;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #66bb6a; background: #1a2a1a; color: #aaa; }
+    .drop-zone input[type="file"] { position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%; }
+
+    /* ── from-csv badge ── */
+    .csv-badge {
+      font-size: .65rem; font-weight: 700; background: #1a3052; color: #64b5f6;
+      border: 1px solid #42a5f5; border-radius: 3px; padding: 1px 5px;
+    }
+    .from-csv label .csv-badge { display: inline-block; }
+    .from-csv input, .from-csv select { border-color: #42a5f5 !important; }
+
+    /* ── switch panel ── */
+    .switch-panel {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .switch-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #272727;
+      flex-wrap: wrap;
+    }
+    .switch-layout {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: #1e1e1e;
+      border-top: 1px solid #2a2a2a;
+    }
+    .switch-layout .form-group { min-width: 120px; }
+    .switch-layout label { font-size: .72rem; color: #666; }
+    .switch-layout input, .switch-layout select { font-size: .8rem; padding: 4px 7px; }
+    .from-csv-sw input, .from-csv-sw select { border-color: #42a5f5 !important; }
+    .switch-header .sw-name {
+      flex: 1 1 180px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 5px;
+      color: #e0e0e0;
+      font-size: .9rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      outline: none;
+    }
+    .switch-header .sw-name:focus { border-color: #66bb6a; }
+    .switch-header .sw-role {
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 5px;
+      color: #e0e0e0;
+      font-size: .82rem;
+      padding: 5px 8px;
+      outline: none;
+    }
+    .sw-actions { display: flex; gap: 5px; margin-left: auto; align-items: center; }
+    .port-count-badge {
+      font-size: .72rem; color: #666;
+      background: #2a2a2a; border: 1px solid #333;
+      border-radius: 4px; padding: 2px 7px;
+    }
+
+    /* ── port table ── */
+    .port-table-wrap {
+      overflow-x: auto;
+      border-top: 1px solid #2c2c2c;
+    }
+    .port-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    .port-table thead th {
+      background: #222;
+      color: #777;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+      white-space: nowrap;
+    }
+    .port-table tbody tr { border-bottom: 1px solid #252525; }
+    .port-table tbody tr:hover { background: #202020; }
+    .port-table td {
+      padding: 3px 5px;
+      vertical-align: middle;
+    }
+    .port-table td.td-label {
+      color: #666;
+      font-size: .75rem;
+      font-family: monospace;
+      width: 36px;
+      text-align: center;
+    }
+    .port-table td input[type="text"] {
+      padding: 3px 6px;
+      font-size: .8rem;
+      border-radius: 4px;
+    }
+    .port-table td select {
+      padding: 3px 4px;
+      font-size: .78rem;
+      border-radius: 4px;
+    }
+    .port-table td.td-active { text-align: center; width: 44px; }
+    .col-name    { min-width: 100px; }
+    .col-type    { width: 85px; }
+    .col-vlan    { width: 65px; }
+    .col-nvlan   { width: 80px; }
+
+    /* ── add-switch inline form ── */
+    #add-sw-form {
+      display: none;
+      background: #1e2e1e;
+      border: 1px solid #2a3a2a;
+      border-radius: 7px;
+      padding: 14px 16px;
+      margin-top: 10px;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── vlan colors ── */
+    .vlan-color-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .vlan-color-row:last-child { border-bottom: none; }
+    .vlan-swatch {
+      width: 34px; height: 28px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      padding: 2px;
+      cursor: pointer;
+      background: transparent;
+      flex-shrink: 0;
+    }
+    .vlan-label { font-size: .85rem; min-width: 80px; }
+    .badge-rec {
+      font-size: .65rem; font-weight: 700; background: #1a3a22; color: #66bb6a;
+      border: 1px solid #66bb6a; border-radius: 3px; padding: 1px 5px;
+    }
+    .btn-reset { font-size: .7rem; color: #888; border: 1px solid #404040; background: transparent; border-radius: 4px; padding: 2px 7px; cursor: pointer; }
+    .btn-reset:hover { color: #ccc; border-color: #666; }
+    .vlan-colors-empty { color: #555; font-size: .85rem; padding: 10px 0; }
+
+    /* ── template actions ── */
+    .template-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+    /* ── spinner ── */
+    .spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid #333; border-top-color: #66bb6a;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── error ── */
+    .error-msg {
+      display: none;
+      background: #3a1a1a; border: 1px solid #aa3333; border-radius: 6px;
+      padding: 10px 14px; color: #ff8888; font-size: .82rem; margin-top: 12px;
+    }
+
+    /* ── result ── */
+    #result-section { display: none; max-width: 1100px; }
+    #result-section img {
+      width: 100%; border-radius: 8px;
+      border: 1px solid #333; background: #1e1e1e;
+    }
+    .result-actions { display: flex; gap: 10px; margin-top: 10px; }
+
+    /* ── CSV reference (collapsible) ── */
+    .collapsible-title {
+      cursor: pointer; user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .collapsible-title:hover { color: #aaa; }
+    .caret { font-size: .8rem; color: #555; transition: transform .2s; }
+    .formats { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+    .fmt-block {
+      background: #1a1a1a; border: 1px solid #2c2c2c; border-radius: 7px; padding: 14px 18px;
+    }
+    .fmt-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .fmt-title { font-size: .88rem; font-weight: 600; }
+    .fmt-desc  { font-size: .76rem; color: #777; margin-top: 3px; }
+    .fmt-tag   { font-size: .68rem; font-weight: 700; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+    .tag-meraki  { background: #1a3a22; color: #66bb6a; border: 1px solid #66bb6a; }
+    .tag-simple  { background: #1a2a3a; color: #64b5f6; border: 1px solid #64b5f6; }
+    .tag-minimal { background: #2a2218; color: #ffb74d; border: 1px solid #ffb74d; }
+    pre {
+      font-family: Consolas, monospace; font-size: .76rem; color: #bbb;
+      background: #111; border-radius: 5px; padding: 10px 12px;
+      overflow-x: auto; line-height: 1.5; border: 1px solid #242424;
+    }
+    .dl-link { font-size: .76rem; color: #66bb6a; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; margin-top: 6px; }
+    .dl-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>Switch<span>Visualizer</span></header>
+
+<!-- ── Switches ── -->
+<div class="card">
+  <div class="card-title">
+    Switches
+    <span style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" id="btn-show-add">+ Add switch</button>
+      <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+        📂 Import CSV
+        <input type="file" id="csv-import" multiple accept=".csv" style="display:none">
+      </label>
+    </span>
+  </div>
+
+  <!-- Inline "add switch" form -->
+  <div id="add-sw-form">
+    <div class="form-group w2">
+      <label>Switch name</label>
+      <input type="text" id="new-sw-name" placeholder="e.g. CZOKR-IDF07-SW1" value="Switch 1">
+    </div>
+    <div class="form-group w1">
+      <label>Role</label>
+      <select id="new-sw-role">
+        <option value="Active">🟢 Active</option>
+        <option value="Member">🔵 Member</option>
+      </select>
+    </div>
+    <div class="form-group w1">
+      <label>Port count</label>
+      <input type="number" id="new-sw-ports" value="48" min="1" max="128" style="width:80px">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="submitAddSwitch()">Add</button>
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('add-sw-form').style.display='none'">Cancel</button>
+  </div>
+
+  <div id="switches-list" style="margin-top:10px;">
+    <div style="color:#555;font-size:.85rem;padding:12px 0;" id="no-switches-hint">
+      No switches yet — add one manually or import a CSV file.
+    </div>
+  </div>
+</div>
+
+<!-- ── VLAN Colors ── -->
+<div class="card">
+  <div class="card-title">
+    VLAN Colors
+    <span style="font-size:.72rem;color:#555;font-weight:400;margin-left:4px;">— auto-detected from port table</span>
+  </div>
+  <div id="vlan-colors-list">
+    <div class="vlan-colors-empty">Add ports with VLANs to see color options.</div>
+  </div>
+  <div class="template-row">
+    <button class="btn btn-secondary btn-sm" onclick="saveTemplate()">⬇ Save color template</button>
+    <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+      ⬆ Load template
+      <input type="file" id="template-file" accept=".json" style="display:none">
+    </label>
+  </div>
+</div>
+
+<!-- ── Generate ── -->
+<div class="card" style="max-width:980px;">
+  <div class="form-row" style="align-items:flex-end;">
+    <div class="form-group w3">
+      <label>Image title</label>
+      <input type="text" name="title" placeholder="Leave empty to use switch names">
+    </div>
+    <button class="btn btn-primary" id="btn-generate" onclick="generateImage()" style="align-self:flex-end;">
+      <span class="spinner" id="spinner"></span>
+      <span id="btn-label">Generate image</span>
+    </button>
+  </div>
+  <div class="error-msg" id="error-msg"></div>
+</div>
+
+<!-- ── Result ── -->
+<div class="card" id="result-section">
+  <div class="card-title">Result</div>
+  <img id="result-img" src="" alt="Generated image">
+  <div class="result-actions">
+    <a id="download-link" class="btn btn-secondary" href="#" download="stack.png">⬇ Download PNG</a>
+  </div>
+</div>
+
+<!-- ── CSV Reference (collapsible) ── -->
+<div class="card">
+  <div class="card-title collapsible-title" id="fmt-toggle">
+    CSV Format Reference
+    <span class="caret" id="fmt-caret">▼</span>
+  </div>
+  <div id="fmt-body" style="display:none">
+    <div class="formats">
+
+      <div class="fmt-block">
+        <div class="fmt-header">
+          <div>
+            <div class="fmt-title">Meraki Dashboard Export <span class="fmt-tag tag-meraki">Auto-detected</span></div>
+            <div class="fmt-desc">Direct export from Meraki Dashboard → Switch → Switchports. SFP and stack ports auto-detected.</div>
+          </div>
+          <a class="dl-link" href="/samples/meraki_export.csv" download>⬇ sample</a>
+        </div>
+        <pre>"#","Name","Type","VLAN","LLDP / CDP","Link","Current traffic","Total bytes","RSTP","Mirror"
+"1","","Access","1","—","Auto negotiate","—","—","Enabled",""
+"2","PC-Reception","Access","50","—","Auto negotiate","—","—","Forwarding",""
+"49","Uplink-1","Access","1","—","Auto negotiate","—","—","Forwarding",""
+"Dedicated stack port 1","","","","","","","","",""</pre>
+      </div>
+
+      <div class="fmt-block">
+        <div class="fmt-header">
+          <div>
+            <div class="fmt-title">Simple CSV <span class="fmt-tag tag-simple">Auto-detected</span></div>
+            <div class="fmt-desc">Generic format. <code>Connected</code> = true/yes/1 marks active ports.</div>
+          </div>
+          <a class="dl-link" href="/samples/simple.csv" download>⬇ sample</a>
+        </div>
+        <pre>Port,VLAN,Type,Connected
+1,1,Access,false
+2,50,Access,true
+17,1,Trunk,true</pre>
+      </div>
+
+      <div class="fmt-block">
+        <div class="fmt-header">
+          <div>
+            <div class="fmt-title">Minimal CSV <span class="fmt-tag tag-minimal">Auto-detected</span></div>
+            <div class="fmt-desc">Port number and VLAN only. All ports treated as Access, none active.</div>
+          </div>
+          <a class="dl-link" href="/samples/minimal.csv" download>⬇ sample</a>
+        </div>
+        <pre>Port,VLAN
+1,1
+2,50
+6,309</pre>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// Constants
+// ══════════════════════════════════════════════════════════════════
+
+const RECOMMENDED = {
+  '1':     '#9e9e9e',
+  '50':    '#ef9a66',
+  '309':   '#64b5f6',
+  '310':   '#66bba5',
+  '501':   '#ffd56e',
+  'trunk': '#b39ddb',
+  'stack': '#323232',
+};
+const PALETTE = [
+  '#ef9a66','#64b5f6','#66bba5','#ffd56e','#ff8a65',
+  '#81c784','#4db6ac','#ff8fab','#80deea','#ce93d8',
+];
+
+// ══════════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════════
+
+let switches = [];       // [{id, name, role}] — port data lives in the DOM
+let vlanColors = {};     // {vlanId: '#rrggbb'}
+let paletteUsed = 0;
+let swCounter = 0;
+
+// ══════════════════════════════════════════════════════════════════
+// Color helpers
+// ══════════════════════════════════════════════════════════════════
+
+function getOrAssignColor(vlanId) {
+  if (vlanColors[vlanId]) return vlanColors[vlanId];
+  if (RECOMMENDED[vlanId]) {
+    vlanColors[vlanId] = RECOMMENDED[vlanId];
+  } else {
+    vlanColors[vlanId] = nextPaletteColor();
+  }
+  return vlanColors[vlanId];
+}
+
+function nextPaletteColor() {
+  if (paletteUsed < PALETTE.length) return PALETTE[paletteUsed++];
+  const n = paletteUsed++ - PALETTE.length;
+  const h = (n * 137.508) % 360;
+  return hsvToHex(h, 0.55, 0.82);
+}
+
+function hsvToHex(h, s, v) {
+  const f = n => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+  const r = Math.round(f(5) * 255), g = Math.round(f(3) * 255), b = Math.round(f(1) * 255);
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Switch management
+// ══════════════════════════════════════════════════════════════════
+
+function addSwitch(name, role, ports, layout) {
+  const id = `sw-${++swCounter}`;
+  switches.push({ id, name, role });
+  document.getElementById('no-switches-hint').style.display = 'none';
+  if (ports) ports._layout = layout || {};
+
+  const panel = document.createElement('div');
+  panel.className = 'switch-panel';
+  panel.id = id;
+
+  const swLayout = ports._layout || {};
+  const sfpVal   = (swLayout.sfp_ports || []).join(',');
+  const stVal    = String(swLayout.stack_ports ?? 2);
+  const poVal    = swLayout.port_order   || 'columns';
+  const p1Val    = swLayout.port_one_top === false ? 'bottom' : 'top';
+  const fromCsv  = swLayout._from_csv ? 'from-csv-sw' : '';
+
+  panel.innerHTML = `
+    <div class="switch-header">
+      <input class="sw-name" value="${esc(name)}" placeholder="Switch name">
+      <select class="sw-role">
+        <option value="Active" ${role === 'Active' ? 'selected' : ''}>🟢 Active</option>
+        <option value="Member" ${role !== 'Active' ? 'selected' : ''}>🔵 Member</option>
+      </select>
+      <span class="port-count-badge">${ports.length} ports</span>
+      <div class="sw-actions">
+        <button class="btn-icon" title="Move up"   onclick="moveSw('${id}',-1)">↑</button>
+        <button class="btn-icon" title="Move down" onclick="moveSw('${id}',1)">↓</button>
+        <button class="btn-icon" title="Show/hide ports" onclick="togglePorts('${id}')">≡ Ports</button>
+        <button class="btn-icon" title="Remove" style="color:#ef5350;border-color:#ef5350"
+                onclick="removeSw('${id}')">✕</button>
+      </div>
+    </div>
+    <div class="switch-layout ${fromCsv}">
+      <div class="form-group" style="flex:2 1 160px">
+        <label>Port numbering</label>
+        <select class="sw-port-order">
+          <option value="columns" ${poVal==='columns'?'selected':''}>By columns (Meraki)</option>
+          <option value="rows"    ${poVal==='rows'   ?'selected':''}>By rows (Catalyst)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1 1 110px">
+        <label>Port 1 position</label>
+        <select class="sw-port-one-top">
+          <option value="top"    ${p1Val==='top'   ?'selected':''}>Top left</option>
+          <option value="bottom" ${p1Val==='bottom'?'selected':''}>Bottom left</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1 1 110px">
+        <label>Stack ports</label>
+        <select class="sw-stack-ports">
+          <option value="0" ${stVal==='0'?'selected':''}>None</option>
+          <option value="1" ${stVal==='1'?'selected':''}>1 stack port</option>
+          <option value="2" ${stVal==='2'?'selected':''}>2 stack ports</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:2 1 160px">
+        <label>SFP / uplink ports</label>
+        <input type="text" class="sw-sfp-ports" value="${esc(sfpVal)}" placeholder="e.g. 49,50,51,52">
+      </div>
+    </div>
+    <div class="port-table-wrap" id="ports-${id}" style="display:none"></div>
+  `;
+
+  const tbody_el = buildPortTable(ports, id);
+  panel.querySelector(`#ports-${id}`).appendChild(tbody_el);
+
+  document.getElementById('switches-list').appendChild(panel);
+  onVlanChange();
+}
+
+function buildPortTable(ports, swId) {
+  const table = document.createElement('table');
+  table.className = 'port-table';
+  table.innerHTML = `<thead><tr>
+    <th>#</th>
+    <th class="col-name">Name</th>
+    <th class="col-type">Type</th>
+    <th class="col-vlan">VLAN</th>
+    <th class="col-nvlan">Native VLAN</th>
+    <th style="width:44px;text-align:center;">Active</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+  ports.forEach(p => tbody.appendChild(makePortRow(p)));
+  table.appendChild(tbody);
+
+  // Trigger VLAN sync on changes
+  table.addEventListener('change', e => {
+    if (e.target.classList.contains('p-vlan') || e.target.classList.contains('p-type'))
+      onVlanChange();
+  });
+  table.addEventListener('input', e => {
+    if (e.target.classList.contains('p-vlan')) onVlanChange();
+  });
+  return table;
+}
+
+function makePortRow(p) {
+  const tr = document.createElement('tr');
+  tr.dataset.label = p.label;
+  const typeOpts = ['Access','Trunk'].map(t =>
+    `<option value="${t}" ${p.type === t ? 'selected' : ''}>${t}</option>`
+  ).join('');
+  tr.innerHTML = `
+    <td class="td-label">${esc(p.label)}</td>
+    <td class="col-name"><input type="text" class="p-name" value="${esc(p.name||'')}" placeholder=""></td>
+    <td class="col-type"><select class="p-type">${typeOpts}</select></td>
+    <td class="col-vlan"><input type="text" class="p-vlan" value="${esc(p.vlan||'1')}" placeholder="1"></td>
+    <td class="col-nvlan"><input type="text" class="p-native-vlan" value="${esc(p.nativeVlan||p.native_vlan||'')}" placeholder=""></td>
+    <td class="td-active"><input type="checkbox" class="p-active" ${p.active ? 'checked' : ''}></td>
+  `;
+  return tr;
+}
+
+function removeSw(id) {
+  switches = switches.filter(s => s.id !== id);
+  document.getElementById(id)?.remove();
+  if (!switches.length) document.getElementById('no-switches-hint').style.display = '';
+  onVlanChange();
+}
+
+function moveSw(id, dir) {
+  const idx = switches.findIndex(s => s.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= switches.length) return;
+  [switches[idx], switches[newIdx]] = [switches[newIdx], switches[idx]];
+  const list = document.getElementById('switches-list');
+  const panels = [...list.querySelectorAll('.switch-panel')];
+  // Re-order DOM
+  const moved = document.getElementById(id);
+  const target = document.getElementById(switches[idx].id);
+  if (dir === -1) list.insertBefore(moved, target);
+  else list.insertBefore(target, moved);
+}
+
+function togglePorts(id) {
+  const wrap = document.getElementById(`ports-${id}`);
+  wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Add switch form
+// ══════════════════════════════════════════════════════════════════
+
+document.getElementById('btn-show-add').onclick = () => {
+  const f = document.getElementById('add-sw-form');
+  f.style.display = getComputedStyle(f).display === 'none' ? 'flex' : 'none';
+};
+
+function submitAddSwitch() {
+  const name  = document.getElementById('new-sw-name').value.trim() || 'Switch';
+  const role  = document.getElementById('new-sw-role').value;
+  const count = parseInt(document.getElementById('new-sw-ports').value) || 48;
+  const ports = Array.from({length: count}, (_, i) => ({
+    label: String(i + 1), name: '', type: 'Access', vlan: '1', nativeVlan: '', active: false,
+  }));
+  addSwitch(name, role, ports);
+  document.getElementById('add-sw-form').style.display = 'none';
+  document.getElementById('new-sw-name').value = 'Switch ' + (switches.length + 1);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CSV import
+// ══════════════════════════════════════════════════════════════════
+
+document.getElementById('csv-import').addEventListener('change', async function () {
+  if (!this.files.length) return;
+  const fd = new FormData();
+  [...this.files].forEach(f => fd.append('files', f));
+  this.value = '';
+
+  try {
+    const res = await fetch('/prefill', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+
+    data.switches.forEach((sw, i) => {
+      const ports = sw.ports.map(p => ({
+        label: p.label, name: p.name || '', type: p.type || 'Access',
+        vlan: p.vlan || '1', nativeVlan: p.native_vlan || '', active: p.active || false,
+      }));
+      const layout = sw.layout ? { ...sw.layout, _from_csv: true } : {};
+      addSwitch(sw.name, i === 0 ? 'Active' : 'Member', ports, layout);
+    });
+  } catch (e) {
+    showError('CSV import failed: ' + e.message);
+  }
+});
+
+
+// ══════════════════════════════════════════════════════════════════
+// VLAN Colors panel
+// ══════════════════════════════════════════════════════════════════
+
+function collectVlans() {
+  const vlans = new Set(['stack']);
+  document.querySelectorAll('.port-table tbody tr').forEach(tr => {
+    const type = tr.querySelector('.p-type')?.value;
+    if (type === 'Trunk') {
+      vlans.add('trunk');
+    } else {
+      const v = tr.querySelector('.p-vlan')?.value?.trim();
+      if (v) vlans.add(v);
+    }
+  });
+  return vlans;
+}
+
+function onVlanChange() {
+  const vlans = collectVlans();
+  vlans.forEach(v => getOrAssignColor(v));
+  renderVlanColors(vlans);
+}
+
+function renderVlanColors(vlans) {
+  const container = document.getElementById('vlan-colors-list');
+  if (!vlans.size || (vlans.size === 1 && vlans.has('stack'))) {
+    container.innerHTML = '<div class="vlan-colors-empty">Add ports with VLANs to see color options.</div>';
+    return;
+  }
+  container.innerHTML = '';
+
+  const sorted = [...vlans].sort((a, b) => {
+    const na = parseInt(a), nb = parseInt(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    if (!isNaN(na)) return -1;
+    if (!isNaN(nb)) return 1;
+    return a.localeCompare(b);
+  });
+
+  sorted.forEach(vlanId => {
+    const color = vlanColors[vlanId] || '#888888';
+    const isRec = RECOMMENDED[vlanId] !== undefined;
+    const isDefault = isRec && color === RECOMMENDED[vlanId];
+    const label = vlanId === 'trunk' ? 'Trunk' : vlanId === 'stack' ? 'Stack' : `VLAN ${vlanId}`;
+
+    const row = document.createElement('div');
+    row.className = 'vlan-color-row';
+    row.dataset.vlan = vlanId;
+    row.innerHTML = `
+      <input type="color" class="vlan-swatch" value="${color}" title="${label}">
+      <span class="vlan-label">${label}</span>
+      ${isRec ? `<span class="badge-rec">Recommended</span>` : ''}
+      ${isRec && !isDefault ? `<button class="btn-reset">Reset</button>` : ''}
+    `;
+
+    const swatch = row.querySelector('.vlan-swatch');
+    swatch.addEventListener('input', e => {
+      vlanColors[vlanId] = e.target.value;
+      // Update reset button without full re-render
+      const existing = row.querySelector('.btn-reset');
+      const nowDefault = vlanColors[vlanId] === RECOMMENDED[vlanId];
+      if (isRec && nowDefault && existing) existing.remove();
+      if (isRec && !nowDefault && !existing) {
+        const btn = makeResetBtn(vlanId, row, swatch);
+        row.appendChild(btn);
+      }
+    });
+
+    const resetBtn = row.querySelector('.btn-reset');
+    if (resetBtn) {
+      resetBtn.replaceWith(makeResetBtn(vlanId, row, swatch));
+    }
+
+    container.appendChild(row);
+  });
+}
+
+function makeResetBtn(vlanId, row, swatch) {
+  const btn = document.createElement('button');
+  btn.className = 'btn-reset';
+  btn.textContent = 'Reset';
+  btn.addEventListener('click', () => {
+    vlanColors[vlanId] = RECOMMENDED[vlanId];
+    swatch.value = RECOMMENDED[vlanId];
+    btn.remove();
+  });
+  return btn;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Template save / load
+// ══════════════════════════════════════════════════════════════════
+
+function saveTemplate() {
+  const template = { version: 2, vlan_colors: { ...vlanColors } };
+  const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'switchvisualizer-template.json';
+  a.click();
+}
+
+document.getElementById('template-file').addEventListener('change', function () {
+  if (!this.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const t = JSON.parse(e.target.result);
+      if (t.vlan_colors) { Object.assign(vlanColors, t.vlan_colors); onVlanChange(); }
+    } catch (_) { showError('Invalid template file.'); }
+  };
+  reader.readAsText(this.files[0]);
+  this.value = '';
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Generate
+// ══════════════════════════════════════════════════════════════════
+
+async function generateImage() {
+  if (!switches.length) { showError('Add at least one switch.'); return; }
+
+  setLoading(true);
+  document.getElementById('error-msg').style.display = 'none';
+
+  const swData = switches.map(sw => {
+    const panel = document.getElementById(sw.id);
+    const name = panel.querySelector('.sw-name').value.trim() || sw.name;
+    const role = panel.querySelector('.sw-role').value;
+    const ports = [...panel.querySelectorAll('.port-table tbody tr')].map(tr => ({
+      label:       tr.dataset.label,
+      name:        tr.querySelector('.p-name').value.trim(),
+      port_type:   tr.querySelector('.p-type').value,
+      vlan:        tr.querySelector('.p-vlan').value.trim() || '1',
+      native_vlan: tr.querySelector('.p-native-vlan').value.trim(),
+      active:      tr.querySelector('.p-active').checked,
+    }));
+    const layout = {
+      port_order:   panel.querySelector('.sw-port-order').value,
+      port_one_top: panel.querySelector('.sw-port-one-top').value === 'top',
+      stack_ports:  parseInt(panel.querySelector('.sw-stack-ports').value),
+      sfp_ports:    panel.querySelector('.sw-sfp-ports').value.split(',').map(s => s.trim()).filter(Boolean),
+    };
+    return { name, role, ports, layout };
+  });
+
+  const payload = {
+    title:       document.querySelector('[name=title]').value.trim(),
+    vlan_colors: { ...vlanColors },
+    switches:    swData,
+  };
+
+  try {
+    const res  = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    document.getElementById('result-img').src = `/result/${data.token}?t=` + Date.now();
+    document.getElementById('download-link').href = `/download/${data.token}`;
+    const sec = document.getElementById('result-section');
+    sec.style.display = 'block';
+    sec.scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showError('Error: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UI helpers
+// ══════════════════════════════════════════════════════════════════
+
+function setLoading(on) {
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = on;
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+  document.getElementById('btn-label').textContent  = on ? 'Generating…' : 'Generate image';
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Collapsible CSV reference
+// ══════════════════════════════════════════════════════════════════
+
+document.getElementById('fmt-toggle').addEventListener('click', () => {
+  const body  = document.getElementById('fmt-body');
+  const caret = document.getElementById('fmt-caret');
+  const open  = body.style.display !== 'none';
+  body.style.display    = open ? 'none' : 'block';
+  caret.style.transform = open ? ''     : 'rotate(180deg)';
+});
+</script>
+</body>
+</html>

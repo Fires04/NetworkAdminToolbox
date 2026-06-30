@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python generate.py \"C:/Users/Stein/Downloads/CZOKR-IDF07-H4AccessPoE.115 switchports.csv\" \"C:/Users/Stein/Downloads/CZOKR-IDF07-H4AccessPoE.116 switchports.csv\" -o test_stack.png -t \"CZOKR-IDF07-STACK · MS225-48LP · VLAN mapa\")",
+      "Bash(python -)",
+      "Bash(python generate.py \"testdata/CZOKR-IDF07-H3DressingRoomAccessPoE.139 switchports.csv\" \"testdata/CZOKR-IDF07-H3DressingRoomAccessPoE.140 switchports.csv\" \"testdata/CZOKR-IDF07-H3DressingRoomAccessPoE.141 switchports.csv\" -o testdata/idf07_stack2.png -t \"IDF07-Stack2\")",
+      "Bash(python scripts/generate_test_csv_idf07_stack2.py)",
+      "Bash(python generate.py \"C:/Users/Stein/Downloads/CZOKR-IDF08-H3DressingRoomAccessPoE.117 switchports.csv\" \"C:/Users/Stein/Downloads/CZOKR-IDF08-H3DressingRoomAccessPoE.118 switchports.csv\" -o testdata/idf08_stack.png -t \"CZOKR-IDF08-STACK\")",
+      "Bash(python generate.py \"C:/Users/Stein/Downloads/CZOKR-IDF08-H3DressingRoomAccessPoE.118 switchports.csv\" \"C:/Users/Stein/Downloads/CZOKR-IDF08-H3DressingRoomAccessPoE.117 switchports.csv\" -o testdata/idf08_stack.png -t \"CZOKR-IDF08-STACK\")",
+      "Bash(mkdir -p \"C:/claude/meraki-port-visualiser/meraki_viz\" \"C:/claude/meraki-port-visualiser/configs\")"
+    ]
+  }
+}
