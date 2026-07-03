@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
 
@@ -176,6 +176,72 @@ async def download(token: str):
         media_type="image/png",
         headers={"Content-Disposition": "attachment; filename=stack.png"},
     )
+
+
+def _parse_sw_ports(port_str: str) -> list[Port]:
+    """Parse 'label:vlan,...' into Port objects."""
+    ports = []
+    for token in port_str.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        label, _, vlan = token.partition(":")
+        vlan = vlan.strip()
+        ptype = "Trunk" if vlan.lower() == "trunk" else "Access"
+        ports.append(Port(label=label.strip(), port_type=ptype, vlan=vlan))
+    return ports
+
+
+def _parse_sw_opts(opt_parts: list[str]) -> RenderOptions:
+    """Parse ['sfp=49,50', 'stack=2', 'order=columns', 'p1=top'] into RenderOptions."""
+    opts: dict = {}
+    for part in opt_parts:
+        key, _, val = part.partition("=")
+        key = key.strip()
+        val = val.strip()
+        if key == "sfp":
+            opts["sfp_ports"] = [s.strip() for s in val.split(",") if s.strip()]
+        elif key == "stack":
+            opts["stack_ports"] = int(val)
+        elif key == "order":
+            opts["port_order"] = val
+        elif key == "p1":
+            opts["port_one_top"] = (val != "bottom")
+    return RenderOptions(**opts)
+
+
+@app.get("/render")
+async def render_quick(
+    sw: list[str] = Query(default=[]),
+    title: str = "",
+):
+    """Quick multi-switch render.
+    Each sw param: 'name|1:1,2:501,49:trunk|sfp=49,50,51,52|stack=2|order=columns|p1=top'
+    Example: /render?sw=SW1|1:1,2:501|sfp=49,50&sw=SW2|1:1|sfp=49,50
+    """
+    if not sw:
+        return Response("No switches provided. Use ?sw=name|ports|opts", status_code=400)
+
+    switches_list, labels, opts_list = [], [], []
+    for s in sw:
+        parts = s.split("|")
+        name = parts[0].strip() or "Switch"
+        port_list = _parse_sw_ports(parts[1] if len(parts) > 1 else "")
+        render_opts = _parse_sw_opts(parts[2:])
+        switches_list.append(Switch(name=name, access_ports=port_list))
+        labels.append(name)
+        opts_list.append(render_opts)
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
+        tmp_path = Path(tf.name)
+    try:
+        render(switches_list, labels, title or " / ".join(labels), str(tmp_path),
+               options_per_switch=opts_list)
+        png_bytes = tmp_path.read_bytes()
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    return Response(content=png_bytes, media_type="image/png")
 
 
 @app.get("/samples/{name}")

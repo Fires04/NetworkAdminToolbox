@@ -379,10 +379,14 @@
       <label>Image title</label>
       <input type="text" name="title" placeholder="Leave empty to use switch names">
     </div>
-    <button class="btn btn-primary" id="btn-generate" onclick="generateImage()" style="align-self:flex-end;">
-      <span class="spinner" id="spinner"></span>
-      <span id="btn-label">Generate image</span>
-    </button>
+    <div style="display:flex;gap:10px;align-self:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-generate" onclick="generateImage()">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-label">Generate image</span>
+      </button>
+      <button class="btn btn-secondary" id="btn-copy-url" onclick="buildShareUrl()">⧉ Copy URL</button>
+      <button class="btn btn-secondary" onclick="exportCsvs()">⬇ Export CSV</button>
+    </div>
   </div>
   <div class="error-msg" id="error-msg"></div>
 </div>
@@ -897,6 +901,119 @@ function esc(s) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// URL sharing
+// ══════════════════════════════════════════════════════════════════
+
+function parseSwPorts(portStr) {
+  if (!portStr) return [];
+  return portStr.split(',').map(token => {
+    const [label, vlan] = token.trim().split(':');
+    return {
+      label: label.trim(),
+      type: (vlan || '').trim().toLowerCase() === 'trunk' ? 'Trunk' : 'Access',
+      vlan: (vlan || '1').trim(),
+      name: '', nativeVlan: '', active: false,
+    };
+  }).filter(p => p.label);
+}
+
+function parseSwOpts(optParts) {
+  const layout = {};
+  optParts.forEach(part => {
+    const [key, val] = part.split('=');
+    if (key === 'sfp')   layout.sfp_ports   = val ? val.split(',').map(s => s.trim()) : [];
+    if (key === 'stack') layout.stack_ports  = parseInt(val) || 0;
+    if (key === 'order') layout.port_order   = val;
+    if (key === 'p1')    layout.port_one_top = val !== 'bottom';
+  });
+  return layout;
+}
+
+function loadFromUrl() {
+  const p = new URLSearchParams(location.search);
+  const title = p.get('title');
+  if (title) document.querySelector('[name=title]').value = title;
+  const swParams = p.getAll('sw');
+  swParams.forEach((s, i) => {
+    const [name, portStr, ...opts] = s.split('|');
+    const ports  = parseSwPorts(portStr || '');
+    const layout = parseSwOpts(opts);
+    addSwitch(name || 'Switch', i === 0 ? 'Active' : 'Member', ports, layout);
+  });
+  if (swParams.length) {
+    // Clean URL without reloading (keeps state, removes params from address bar)
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+function buildShareUrl() {
+  const params = new URLSearchParams();
+  const title = document.querySelector('[name=title]').value.trim();
+  if (title) params.set('title', title);
+
+  switches.forEach(sw => {
+    const panel = document.getElementById(sw.id);
+    const name  = panel.querySelector('.sw-name').value.trim() || sw.name;
+    const ports = [...panel.querySelectorAll('.port-table tbody tr')].map(tr => {
+      const type = tr.querySelector('.p-type').value;
+      const vlan = type === 'Trunk' ? 'trunk' : (tr.querySelector('.p-vlan').value.trim() || '1');
+      return `${tr.dataset.label}:${vlan}`;
+    }).join(',');
+
+    const sfp   = panel.querySelector('.sw-sfp-ports').value.trim();
+    const stack = panel.querySelector('.sw-stack-ports').value;
+    const order = panel.querySelector('.sw-port-order').value;
+    const p1    = panel.querySelector('.sw-port-one-top').value;
+
+    let sw_str = `${name}|${ports}`;
+    if (sfp)                sw_str += `|sfp=${sfp}`;
+    if (stack !== '2')      sw_str += `|stack=${stack}`;
+    if (order !== 'columns') sw_str += `|order=${order}`;
+    if (p1 === 'bottom')    sw_str += `|p1=bottom`;
+    params.append('sw', sw_str);
+  });
+
+  const url = `${location.origin}${location.pathname}?${params}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-copy-url');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CSV export
+// ══════════════════════════════════════════════════════════════════
+
+function exportCsvs() {
+  if (!switches.length) { showError('No switches to export.'); return; }
+  switches.forEach(sw => {
+    const panel = document.getElementById(sw.id);
+    const name  = panel.querySelector('.sw-name').value.trim() || sw.name;
+    const rows  = ['Port,VLAN,Type,Connected,Name,NativeVLAN'];
+    panel.querySelectorAll('.port-table tbody tr').forEach(tr => {
+      const cells = [
+        tr.dataset.label,
+        tr.querySelector('.p-vlan').value.trim() || '1',
+        tr.querySelector('.p-type').value,
+        tr.querySelector('.p-active').checked ? 'true' : 'false',
+        tr.querySelector('.p-name').value.trim(),
+        tr.querySelector('.p-native-vlan').value.trim(),
+      ];
+      rows.push(cells.join(','));
+    });
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: `${name}.csv`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
 // Collapsible CSV reference
 // ══════════════════════════════════════════════════════════════════
 
@@ -907,6 +1024,9 @@ document.getElementById('fmt-toggle').addEventListener('click', () => {
   body.style.display    = open ? 'none' : 'block';
   caret.style.transform = open ? ''     : 'rotate(180deg)';
 });
+
+// Load from URL params on page start
+loadFromUrl();
 </script>
 </body>
 </html>
