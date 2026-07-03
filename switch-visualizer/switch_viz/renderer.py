@@ -65,7 +65,7 @@ def _font(size, bold=False):
 FONT_TITLE = _font(16, bold=True)
 FONT_BADGE = _font(11, bold=True)
 FONT_PORT = _font(10)
-FONT_TINY = _font(7)
+FONT_TINY = _font(9)
 FONT_GROUP = _font(10, bold=True)
 FONT_LEGEND_TITLE = _font(13, bold=True)
 FONT_LEGEND = _font(12)
@@ -93,7 +93,7 @@ def _draw_port_box(draw, x, y, port, color):
     )
     # Native VLAN label — bottom-left corner
     if port.native_vlan:
-        draw.text((x + 2, y + BOX - 10), port.native_vlan, font=FONT_TINY, fill=TEXT_LIGHT)
+        draw.text((x + 2, y + BOX - 12), port.native_vlan, font=FONT_TINY, fill=TEXT_LIGHT)
     # Active icon — bottom-right corner
     if port.active:
         s = 9
