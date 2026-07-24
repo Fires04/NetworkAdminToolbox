@@ -33,6 +33,11 @@ import socket
 import ssl
 import struct
 import subprocess
+
+try:
+    import clidescribe  # optional: enables `--describe` (see clidescribe.py)
+except ImportError:
+    clidescribe = None
 import tempfile
 import urllib.parse
 
@@ -1393,11 +1398,15 @@ def build_parser():
                          help="password for login/AUTH (smtp/smtps/pop3/pop3s/imap/imaps only)")
     parser.add_argument("targets", nargs="*", metavar="IP",
                          help="one or more IP addresses / hostnames to test")
+    if clidescribe:
+        clidescribe.add_describe_flag(parser)
     return parser
 
 
 def main():
     parser = build_parser()
+    if clidescribe and clidescribe.maybe_describe(parser):
+        return
     args = parser.parse_args()
 
     if args.protocols:
