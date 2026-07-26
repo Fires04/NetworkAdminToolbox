@@ -108,6 +108,20 @@ def add_describe_flag(parser):
     return parser
 
 
+def hide_from_schema(action):
+    """Mark an argparse action to be omitted from build_schema() (and thus
+    from any auto-generated web form), while it keeps working normally on
+    the command line. Use this for CLI-only conveniences that don't make
+    sense as a form field -- e.g. a "list valid choices and exit" flag when
+    the choices already show up in an enum dropdown.
+
+        action = parser.add_argument("--protocols", action="store_true", ...)
+        clidescribe.hide_from_schema(action)
+    """
+    action._clidescribe_internal = True
+    return action
+
+
 def maybe_describe(parser, argv=None, name=None):
     """Call right after building the parser, before parser.parse_args().
 

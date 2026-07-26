@@ -1,0 +1,12 @@
+﻿services:
+  switch-viz:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persists VLAN color assignments across container restarts.
+      # Create an empty file first if it doesn't exist:
+      #   touch vlan_color_map.yaml   (Linux/Mac)
+      #   New-Item vlan_color_map.yaml (PowerShell)
+      - ./vlan_color_map.yaml:/app/vlan_color_map.yaml
+    restart: unless-stopped

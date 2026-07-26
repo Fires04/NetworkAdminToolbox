@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test_protocol.py - reusable network protocol connectivity tester.
+protocol_tester.py - reusable network protocol connectivity tester.
 
 Checks whether a host actually speaks a given application protocol, not just
 whether a TCP port is open (a "port open" nc/telnet check can be misleading -
@@ -8,20 +8,20 @@ some devices/firewalls accept the TCP handshake but never answer at the
 application layer).
 
 Usage:
-    test_protocol.py --protocols
-    test_protocol.py -p opc 10.83.225.40 10.83.225.46 10.83.225.48
-    test_protocol.py -p opc --ping --timeout 5 10.83.225.46
-    test_protocol.py -p tcp --port 22 10.83.225.46
-    test_protocol.py -p https 10.83.225.46
-    test_protocol.py -p https -v 10.83.225.46           (extended cert info)
-    test_protocol.py -p http 10.83.225.46                (auto-follows a
+    protocol_tester.py --protocols
+    protocol_tester.py -p opc 10.83.225.40 10.83.225.46 10.83.225.48
+    protocol_tester.py -p opc --ping --timeout 5 10.83.225.46
+    protocol_tester.py -p tcp --port 22 10.83.225.46
+    protocol_tester.py -p https 10.83.225.46
+    protocol_tester.py -p https -v 10.83.225.46           (extended cert info)
+    protocol_tester.py -p http 10.83.225.46                (auto-follows a
                                                            http->https redirect
                                                            with a https test)
-    test_protocol.py -p dns 10.83.1.21
-    test_protocol.py -p smb -v 10.83.225.10
-    test_protocol.py -p modbus 10.83.225.40
-    test_protocol.py -p smtp -v mail.example.com
-    test_protocol.py -p smtp -v --user me@example.com --password secret mail.example.com
+    protocol_tester.py -p dns 10.83.1.21
+    protocol_tester.py -p smb -v 10.83.225.10
+    protocol_tester.py -p modbus 10.83.225.40
+    protocol_tester.py -p smtp -v mail.example.com
+    protocol_tester.py -p smtp -v --user me@example.com --password secret mail.example.com
 """
 import argparse
 import base64
@@ -1376,13 +1376,15 @@ def print_protocols():
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        prog="test_protocol.py",
+        prog="protocol_tester.py",
         description="Reusable protocol connectivity tester (TCP/UDP + application-layer handshake checks).",
     )
     parser.add_argument("-p", "--protocol", choices=PROTOCOLS.keys(),
                          help="protocol to test (see --protocols for the list)")
-    parser.add_argument("--protocols", action="store_true",
+    protocols_action = parser.add_argument("--protocols", action="store_true",
                          help="list available protocols and exit")
+    if clidescribe:
+        clidescribe.hide_from_schema(protocols_action)
     parser.add_argument("--ping", action="store_true",
                          help="also perform a ping check before the protocol test")
     parser.add_argument("-v", "--verbose", action="store_true",

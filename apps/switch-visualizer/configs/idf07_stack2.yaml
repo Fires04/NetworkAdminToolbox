@@ -1,0 +1,25 @@
+title: "IDF07-Stack2"
+output: "testdata/idf07_stack2.png"
+sfp_connected: [49]
+
+switches:
+  - name: "CZOKR-IDF07-H3DressingRoomAccessPoE.139"
+    role: Active
+  - name: "CZOKR-IDF07-H3DressingRoomAccessPoE.140"
+    role: Member
+  - name: "CZOKR-IDF07-H3DressingRoomAccessPoE.141"
+    role: Member
+
+vlan_ranges:
+  - ports: [19, 30]
+    vlan: "50"
+  - ports: [31, 34]
+    vlan: "309"
+  - ports: [35, 36]
+    vlan: "310"
+  - ports: [37, 46]
+    vlan: "501"
+  - ports: [47, 48]
+    type: Trunk
+    vlan: "native 1"
+# porty mimo rozsahy = Access, VLAN 1

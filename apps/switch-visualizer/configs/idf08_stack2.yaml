@@ -1,0 +1,23 @@
+title: "IDF08-Stack2"
+output: "testdata/idf08_stack2.png"
+sfp_connected: [49]
+
+switches:
+  - name: "CZOKR-IDF08-H4AccessPoE.143"
+    role: Active
+  - name: "CZOKR-IDF08-H4AccessPoE.144"
+    role: Member
+  - name: "CZOKR-IDF08-H4AccessPoE.145"
+    role: Member
+
+vlan_ranges:
+  - ports: [23, 34]
+    vlan: "50"
+  - ports: [35, 38]
+    vlan: "309"
+  - ports: [39, 46]
+    vlan: "501"
+  - ports: [47, 48]
+    type: Trunk
+    vlan: "native 1"
+# porty mimo rozsahy = Access, VLAN 1
