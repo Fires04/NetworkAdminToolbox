@@ -21,3 +21,6 @@ uvicorn_err.log
 # OS
 Thumbs.db
 .DS_Store
+
+# PyFNetwork toolbox
+/logs/
